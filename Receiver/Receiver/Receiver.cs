@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using RawRabbit;
+using RawRabbit.Attributes;
+using RawRabbit.Common;
 using RawRabbit.Configuration;
 using RawRabbit.Context;
 using RawRabbit.Serialization;
@@ -21,11 +23,24 @@ namespace Receiver
         static void Main(string[] args)
         {
             createClient();
-
-            _busClient.SubscribeAsync<dynamic>((msg, ctx) => subscribeMsg(msg, ctx),
-                cfg => cfg.WithExchange(ex => ex.WithName("exchange_test")).WithRoutingKey("test_routing_key"));
+            subscribeQueues();
+            //_busClient.SubscribeAsync<PrintStringMessage>((msg, ctx) => subscribeMsg(msg, ctx),
+            //    cfg => cfg.WithExchange(ex => ex.WithName("exchange_test")).WithRoutingKey("test_routing_key"));
 
             Console.ReadKey();
+        }
+
+        private static void subscribeQueues()
+        {
+            _busClient.SubscribeAsync<PrintStringMessage>((msg, ctx) => subscribeMsg(msg, ctx),
+               cfg =>
+               cfg.WithExchange(ex =>
+               ex.WithName("exchange_test")));
+
+            _busClient.SubscribeAsync<PrintIntMessage>((msg, ctx) => subscribeMsg(msg, ctx),
+               cfg =>
+               cfg.WithExchange(ex =>
+               ex.WithName("exchange_test")));
         }
 
         private static void createClient()
@@ -40,7 +55,8 @@ namespace Receiver
                                             .SetBasePath(Directory.GetCurrentDirectory())
                                             .AddJsonFile("rawrabbit.json")
                                             .Build().Get<RawRabbitConfiguration>(),
-                                                        (s) => s.AddTransient<IMessageSerializer, CustomSerializer>());
+                                                        (s) => s.AddTransient<IMessageSerializer, CustomSerializer>()
+                                                        .AddSingleton<IConfigurationEvaluator, AttributeConfigEvaluator>());
 
         }
 

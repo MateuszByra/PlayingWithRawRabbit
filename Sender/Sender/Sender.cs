@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RawRabbit;
+using RawRabbit.Attributes;
+using RawRabbit.Common;
 using RawRabbit.Configuration;
 using RawRabbit.Serialization;
 using RawRabbit.vNext;
@@ -22,13 +24,12 @@ namespace Sender
             Console.ReadKey();
 
             _busClient.PublishAsync<NameChanged>(new NameChanged("Jan"), Guid.NewGuid(),
-                cfg => cfg.WithExchange(ex => ex.WithName("exchange_test")).WithRoutingKey("test_routing_key"));
+                cfg => cfg.WithExchange(ex => ex.WithName("exchange_test")));
 
             Console.WriteLine("Press key to publish int message");
             Console.ReadKey();
             _busClient.PublishAsync<AgeChanged>(new AgeChanged(99), Guid.NewGuid(),
-                cfg => cfg.WithExchange(ex => ex.WithName("exchange_test"))
-                .WithRoutingKey("test_routing_key"));
+                cfg => cfg.WithExchange(ex => ex.WithName("exchange_test")));
 
             Console.WriteLine("Press any key to exit.");
             Console.ReadKey();
@@ -41,7 +42,8 @@ namespace Sender
                                             .SetBasePath(Directory.GetCurrentDirectory())
                                             .AddJsonFile("rawrabbit.json")
                                             .Build().Get<RawRabbitConfiguration>(),
-                                                        (s) => s.AddTransient<IMessageSerializer, CustomSerializer>());
+                                                        (s) => s.AddTransient<IMessageSerializer, CustomSerializer>()
+                                                        .AddSingleton<IConfigurationEvaluator,AttributeConfigEvaluator>());
 
             //_busClient = BusClientFactory.CreateDefault(
             //                                 new ConfigurationBuilder()
