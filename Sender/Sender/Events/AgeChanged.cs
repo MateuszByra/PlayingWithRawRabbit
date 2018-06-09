@@ -4,7 +4,8 @@ using System.Text;
 
 namespace Sender.Events
 {
-    public class AgeChanged : IMessage
+    [Serializable]
+    public class AgeChanged
     {
         public int IntValue { get;}
         public AgeChanged(int value)

@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using RawRabbit;
 using RawRabbit.Configuration;
-using RawRabbit.Configuration.Publish;
+using RawRabbit.Serialization;
 using RawRabbit.vNext;
 using Sender.Events;
 using System;
@@ -19,13 +20,14 @@ namespace Sender
 
             Console.WriteLine("Press key to publish string message");
             Console.ReadKey();
-            _busClient.PublishAsync<NameChanged>(new NameChanged("Jan"), Guid.NewGuid(), 
+
+            _busClient.PublishAsync<NameChanged>(new NameChanged("Jan"), Guid.NewGuid(),
                 cfg => cfg.WithExchange(ex => ex.WithName("exchange_test")).WithRoutingKey("test_routing_key"));
 
             Console.WriteLine("Press key to publish int message");
             Console.ReadKey();
-            _busClient.PublishAsync<AgeChanged>(new AgeChanged(99),Guid.NewGuid(), 
-                cfg=>  cfg.WithExchange(ex=>ex.WithName("exchange_test"))
+            _busClient.PublishAsync<AgeChanged>(new AgeChanged(99), Guid.NewGuid(),
+                cfg => cfg.WithExchange(ex => ex.WithName("exchange_test"))
                 .WithRoutingKey("test_routing_key"));
 
             Console.WriteLine("Press any key to exit.");
@@ -34,11 +36,18 @@ namespace Sender
 
         private static void createClient()
         {
-            _busClient = BusClientFactory.CreateDefault(
-                  new ConfigurationBuilder()
-                 .SetBasePath(Directory.GetCurrentDirectory())
-                 .AddJsonFile("rawrabbit.json")
-                 .Build().Get<RawRabbitConfiguration>());
+            _busClient = BusClientFactory.CreateDefault(cfg =>
+                                             new ConfigurationBuilder()
+                                            .SetBasePath(Directory.GetCurrentDirectory())
+                                            .AddJsonFile("rawrabbit.json")
+                                            .Build().Get<RawRabbitConfiguration>(),
+                                                        (s) => s.AddTransient<IMessageSerializer, CustomSerializer>());
+
+            //_busClient = BusClientFactory.CreateDefault(
+            //                                 new ConfigurationBuilder()
+            //                                .SetBasePath(Directory.GetCurrentDirectory())
+            //                                .AddJsonFile("rawrabbit.json")
+            //                                .Build().Get<RawRabbitConfiguration>());
         }
     }
 }

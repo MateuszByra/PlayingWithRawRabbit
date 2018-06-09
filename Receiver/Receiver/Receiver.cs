@@ -1,11 +1,14 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using RawRabbit;
 using RawRabbit.Configuration;
 using RawRabbit.Context;
+using RawRabbit.Serialization;
 using RawRabbit.vNext;
-using Receiver.Events;
 using Receiver.Messages;
 using System;
+using System.Dynamic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -19,7 +22,7 @@ namespace Receiver
         {
             createClient();
 
-            _busClient.SubscribeAsync<MessageBase>((msg, ctx) => subscribeMsg(msg, ctx),
+            _busClient.SubscribeAsync<dynamic>((msg, ctx) => subscribeMsg(msg, ctx),
                 cfg => cfg.WithExchange(ex => ex.WithName("exchange_test")).WithRoutingKey("test_routing_key"));
 
             Console.ReadKey();
@@ -27,21 +30,28 @@ namespace Receiver
 
         private static void createClient()
         {
-            _busClient = BusClientFactory.CreateDefault(
-                  new ConfigurationBuilder()
-                 .SetBasePath(Directory.GetCurrentDirectory())
-                 .AddJsonFile("rawrabbit.json")
-                 .Build().Get<RawRabbitConfiguration>());
+            //_busClient = BusClientFactory.CreateDefault(
+            //                                new ConfigurationBuilder()
+            //                               .SetBasePath(Directory.GetCurrentDirectory())
+            //                               .AddJsonFile("rawrabbit.json")
+            //                               .Build().Get<RawRabbitConfiguration>());
+            _busClient = BusClientFactory.CreateDefault(cfg =>
+                                             new ConfigurationBuilder()
+                                            .SetBasePath(Directory.GetCurrentDirectory())
+                                            .AddJsonFile("rawrabbit.json")
+                                            .Build().Get<RawRabbitConfiguration>(),
+                                                        (s) => s.AddTransient<IMessageSerializer, CustomSerializer>());
+
         }
 
-        private static Task subscribeMsg(MessageBase msg, MessageContext ctx)
+        private static Task subscribeMsg(object msg, MessageContext ctx)
         {
             getSpecificAction(msg)();
             Console.WriteLine(msg);
             return Task.CompletedTask;
         }
 
-        private static Action getSpecificAction(MessageBase msg)
+        private static Action getSpecificAction(object msg)
         {
             switch (msg)
             {

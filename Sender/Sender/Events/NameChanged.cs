@@ -4,7 +4,8 @@ using System.Text;
 
 namespace Sender.Events
 {
-    public class NameChanged : IMessage
+    [Serializable]
+    public class NameChanged
     {
         public string StringValue { get; }
 
